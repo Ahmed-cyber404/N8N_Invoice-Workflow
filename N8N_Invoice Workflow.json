@@ -1,0 +1,282 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        0
+      ],
+      "id": "179382d5-4609-4fa4-b9da-4dff42d07901",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1lt8uLLdByycXr4vUYx4lfK_PG96P3vfY",
+          "mode": "list",
+          "cachedResultName": "Invoice N8N (2).pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/1lt8uLLdByycXr4vUYx4lfK_PG96P3vfY/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "75fbdba1-a588-45d7-9414-918d6a2b8177",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YXSGVV5zqzUIRTta",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "61fdc5c6-8d99-476a-9c4c-82b58b174c13",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are an invoice data extraction engine. Extract the invoice data below into a single, valid JSON object.  RULES 1. Output ONLY the JSON — no explanations, no markdown fences, no extra text. 2. Treat dates as SEPARATE fields — never combine them:    - \"invoice_date\"  → the invoice date    - \"due_date\"      → the payment due date    Convert every date to ISO 8601 format: YYYY-MM-DD (e.g. \"12 July 2026\" → \"2026-07-12\"). 3. Numbers must be JSON numbers (not strings). Strip currency symbols, commas, and \"%\" signs. 4. If a field is missing in the text, set its value to null. Never invent data. 5. Keep SKUs, invoice numbers and names exactly as written. 6. Calculate and include line_total (= qty × unit_price) and vat_amount for each item,    plus invoice-level subtotal, total_vat, and grand_total.  Use exactly this schema:  {   \"invoice_number\": \"\",   \"invoice_date\": \"\",      // ISO date, separate field   \"due_date\": \"\",          // ISO date, separate field   \"supplier\": { \"name\": \"\" },   \"customer\": { \"name\": \"\" },   \"currency\": null,   \"items\": [     {       \"description\": \"\",       \"sku\": \"\",       \"qty\": 0,       \"unit_price\": 0,       \"vat_rate\": 0,       \"line_total\": 0,       \"vat_amount\": 0     }   ],   \"totals\": {     \"subtotal\": 0,     \"total_vat\": 0,     \"grand_total\": 0   } }  INVOICE TEXT --- TAX INVOICE Invoice # INV-2026-0712-0049 Invoice Date 12 July 2026 Due Date 11 August 2026 Supplier Nova Office Supplies LLC Customer Orion Digital Solutions LLC Items Description SKU Qty Unit VAT Total Wireless Keyboard KB-EA-210 1 200 14% 228 ---"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        400,
+        0
+      ],
+      "id": "c09fb28e-0e45-4ab0-82f4-7012c9d2cd55",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        336,
+        208
+      ],
+      "id": "434691dc-3ec6-4483-9f86-9c108608addf",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "tDeO00LhTXlUOt6T",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const invoice = {\n  \"invoice_number\": \"INV-2026-0712-0049\",\n  \"invoice_date\": \"2026-07-12\",\n  \"due_date\": \"2026-08-11\",\n  \"supplier\": {\n    \"name\": \"Nova Office Supplies LLC\"\n  },\n  \"customer\": {\n    \"name\": \"Orion Digital Solutions LLC\"\n  },\n  \"currency\": null,\n  \"items\": [\n    {\n      \"description\": \"Wireless Keyboard\",\n      \"sku\": \"KB-EA-210\",\n      \"qty\": 1,\n      \"unit_price\": 200,\n      \"vat_rate\": 14,\n      \"line_total\": 200,\n      \"vat_amount\": 28\n    }\n  ],\n  \"totals\": {\n    \"subtotal\": 200,\n    \"total_vat\": 28,\n    \"grand_total\": 228\n  }\n};\n\nreturn { json: invoice };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "82df1590-f10d-4eb8-ae98-c41e371eedff",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1jwlVU9HQoAJYpR9H2FQg96hb0FFJYSty3s-_9QHfm3g",
+          "mode": "list",
+          "cachedResultName": "N8N Test",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jwlVU9HQoAJYpR9H2FQg96hb0FFJYSty3s-_9QHfm3g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jwlVU9HQoAJYpR9H2FQg96hb0FFJYSty3s-_9QHfm3g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoice_number": "={{ $json.invoice_number }}",
+            "invoice_date": "={{ $json.invoice_date }}",
+            "due_date": "={{ $json.invoice_date }}",
+            "supplier": "={{ $json.supplier.name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "invoice_date",
+              "displayName": "invoice_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "supplier",
+              "displayName": "supplier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        992,
+        0
+      ],
+      "id": "cc7d50b3-3d89-4582-a19d-735168ec3b8d",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o23WN5eSEfvBX4fW",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5d22fcb0-8da9-459c-bcfb-c3fa438b0704",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9dbc01a16ee5ef81ca6d9825e99190d82decca4fae9f14e2015499fc0d482f30"
+  },
+  "nodeGroups": [],
+  "id": "7RUYptjDxqzfQfgb",
+  "tags": []
+}
